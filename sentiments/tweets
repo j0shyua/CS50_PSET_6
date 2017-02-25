@@ -1,0 +1,46 @@
+#!/usr/bin/env python3
+
+import os
+import sys
+import nltk
+import helpers
+from analyzer import Analyzer
+from termcolor import colored
+
+# Accept one command line argument
+if len(sys.argv) != 2:
+    sys.exit("Usage: ./tweet screenName")
+
+# Get user's 50 or less recent past tweets
+tweetList = helpers.get_user_timeline(sys.argv[1].lstrip("@"), 50)      
+
+# Absolute paths to positive/negative words lists
+positives = os.path.join(sys.path[0], "positive-words.txt")
+negatives = os.path.join(sys.path[0], "negative-words.txt")
+
+# Instantiate analyzer
+analyzer = Analyzer(positives, negatives)
+
+# Separate comma-separated-values list into a list of strings (each is separated by a "', ")
+newTweetList = list()
+
+# Make sure twitter handle isn't private/non-existent, catch any other errors.
+if(tweetList == None):
+    sys.exit("User is protected, non-existent, Invalid API_KEY/SECRET, or you've hit a rate limit.")
+
+# Put the tweets into separate indices for the new list
+for i in range (len(tweetList)):
+    newTweetList.append(tweetList[i].strip("', "))
+
+# For each string in the list, we have to tokenize it, analyze and print out the colored/scored tweet
+for i in range (len(newTweetList)):
+    score = analyzer.analyze(newTweetList[i])
+    if score > 0.0:
+        print(colored(score, "green"), end="  ")
+        print(colored(newTweetList[i], "green"))
+    elif score < 0.0:
+        print(colored(score, "red"), end="  ")
+        print(colored(newTweetList[i], "red"))
+    else:
+        print(colored(score, "yellow"), end="  ")
+        print(colored(newTweetList[i], "yellow"))
